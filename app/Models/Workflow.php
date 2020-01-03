@@ -47,9 +47,7 @@ class Workflow extends Model
      */
     public function startNode()
     {
-        return $this->nodes()->where([
-            'type' => 1,
-        ])->first();
+        return $this->nodes()->where('type', 1)->first();
     }
 
     /**
@@ -59,8 +57,6 @@ class Workflow extends Model
      */
     public function endNode()
     {
-        return $this->nodes()->where([
-            'type' => 2,
-        ])->first();
+        return $this->nodes()->where('type', 2)->first();
     }
 }

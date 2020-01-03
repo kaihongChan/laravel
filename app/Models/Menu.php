@@ -69,15 +69,22 @@ class Menu extends Base
      */
     public function editOrAdd(array $requestData, $id = 0)
     {
-        if ($id) {
-            $requestData['id'] = $id;
-        }
         DB::beginTransaction();
         try {
-            if (!self::updateOrCreate($requestData)) {
-                throw new \Exception('菜单保存失败！');
-            }// 同步关联
-            if ($requestData['roles'] && !$this->roles()->sync($requestData['roles'])) {
+            if ($id) {
+                $instance = self::query()->find($id);
+                if (!$instance->update($requestData)) {
+                    throw new \Exception('菜单更新失败！');
+                }
+            } else {
+                $instance = self::query()->create($requestData);
+                if (!$instance) {
+                    throw new \Exception('菜单创建失败！');
+                }
+            }
+
+            // 同步关联
+            if ($requestData['roles'] && !$instance->roles()->sync($requestData['roles'])) {
                 throw new \Exception('同步关联失败！');
             }
 

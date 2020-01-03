@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\DB;
+use mysql_xdevapi\Exception;
 
 class Role extends Base
 {
@@ -76,20 +77,27 @@ class Role extends Base
      */
     public function editOrAdd(array $requestData, $id = 0)
     {
-        if ($id) {
-            $requestData['id'] = $id;
-        }
-
         DB::beginTransaction();
+        try {
+            // 对象更新
+            if ($id) {
+                $instance = self::query()->find($id);
+                if (!$instance->update($requestData)) {
+                    throw new \Exception('角色更新失败！');
+                }
+            } else {
+                $instance = self::query()->create($requestData);
+                if (!$instance) {
+                    throw new \Exception('角色创建失败！');
+                }
+            }
 
-        try {// 对象更新
-            if (!self::updateOrCreate($requestData)) {
-                throw new \Exception('角色保存失败！');
-            }// 同步菜单关联
-            if ($requestData['menus'] && !$this->menus()->sync($requestData['menus'])) {
+            // 同步关联（菜单）
+            if ($requestData['menus'] && !$instance->menus()->sync($requestData['menus'])) {
                 throw new \Exception('关联菜单同步失败！');
-            }// 同步策略关联
-            if ($requestData['policies'] && !$this->policies()->sync($requestData['policies'])) {
+            }
+            // 同步关联（策略）
+            if ($requestData['policies'] && !$instance->policies()->sync($requestData['policies'])) {
                 throw new \Exception('关联策略同步失败！');
             }
 

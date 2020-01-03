@@ -5,9 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
+use mysql_xdevapi\Exception;
 
 class Reimbursement extends WorkflowBase
 {
+    /**
+     *
+     */
     const CONDITION_COLUMNS = [
         [
             'column' => 'amount',
@@ -18,6 +23,9 @@ class Reimbursement extends WorkflowBase
         ],
     ];
 
+    /**
+     *
+     */
     const DYNAMIC_COLUMNS = [
         [
             'column' => '',
@@ -92,13 +100,56 @@ class Reimbursement extends WorkflowBase
     }
 
     /**
-     * @param $requestData
+     * @param array $requestData
+     * @param int $id
      * @return bool
      */
-    public function createOrUpdate($requestData)
+    public function editOrAdd(array $requestData, $id = 0)
     {
+        DB::beginTransaction();
+        try {
+            $details = $requestData['details'];
+            $requestData['amount'] = array_sum(array_column($details, 'amount'));
+            $requestData['status'] = $requestData['status'] == 1 ? 1 : 0;
+            $requestData['current_node'] = 0;
+            if ($id) {
+                $instance = self::query()->find($id);
+                if ($instance->getAttribute('status') == 1) {
+                    throw new \Exception('流转中，操作不允许！');
+                }
+                if (!$instance->update($requestData)) {
+                    throw new \Exception('报销申请更新失败！');
+                }
+            } else {
+                $instance = self::query()->create($requestData);
+                if (!$instance) {
+                    throw new \Exception('报销申请创建失败！');
+                }
+            }
 
-        return true;
+            // 直接提交审核
+            if ($instance->getAttribute('status') === 1) {
+                $instance->submitCallback();
+            }
+
+            // 同步关联（明细）
+            if ($details && !$instance->details()->saveMany($details)) {
+                throw new \Exception('同步关联失败！');
+            }
+
+            // 同步关联（附件）
+            if ($requestData['attachments'] && !$instance->attachments()->saveMany($requestData['attachments'])) {
+                throw new \Exception('同步关联失败！');
+            }
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->error = $e->getMessage();
+            DB::rollBack();
+            return false;
+        }
+
     }
 
 

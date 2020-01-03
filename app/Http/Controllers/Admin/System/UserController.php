@@ -130,7 +130,7 @@ class UserController extends Controller
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        if (!$this->user->editOrAdd($requestData)) {
+        if (!$this->user->editOrAdd($requestData, $id)) {
             return response()->json([
                 'message' => $this->user->getError(),
             ], Response::HTTP_BAD_REQUEST);

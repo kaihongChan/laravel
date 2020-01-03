@@ -58,18 +58,23 @@ class Policy extends Base
      */
     public function editOrAdd(array $requestData, $id = 0)
     {
-        if ($id) {
-            $requestData['id'] = $id;
-        }
         DB::beginTransaction();
         try {
             // 资源保存
-            if (!self::updateOrCreate($requestData)) {
-                throw new \Exception('资源保存失败！');
+            if ($id) {
+                $instance = self::query()->find($id);
+                if (!$instance->update($requestData)) {
+                    throw new \Exception('策略更新失败！');
+                }
+            } else {
+                $instance = self::query()->create($requestData);
+                if (!$instance) {
+                    throw new \Exception('策略创建失败！');
+                }
             }
 
             // 同步关联（策略-权限）
-            if (!$this->permissions()->sync($requestData['permissions'])) {
+            if (!$instance->permissions()->sync($requestData['permissions'])) {
                 throw new \Exception('同步关联失败！');
             };
             DB::commit();

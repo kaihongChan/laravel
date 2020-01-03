@@ -133,16 +133,21 @@ class User extends Authenticatable
      */
     public function editOrAdd(array $requestData, $id = 0)
     {
-        if ($id) {
-            $requestData['id'] = $id;
-        }
         DB::beginTransaction();
         try {
             // 数据保存
-            $instance = self::query()->updateOrCreate($requestData);
-            if (!$instance) {
-                throw new \Exception('用户保存失败！');
+            if ($id) {
+                $instance = self::query()->find($id);
+                if (!$instance->update($requestData)) {
+                    throw new \Exception('用户更新失败！');
+                }
+            } else {
+                $instance = self::query()->create($requestData);
+                if (!$instance) {
+                    throw new \Exception('用户创建失败！');
+                }
             }
+
             // 同步关联
             if ($requestData['roles'] && !$instance->roles()->sync($requestData['roles'])) {
                 throw new \Exception('同步关联失败！');
