@@ -15,7 +15,6 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class AuthController extends Controller
 {
-
     /**
      * 用户名密码登录
      *

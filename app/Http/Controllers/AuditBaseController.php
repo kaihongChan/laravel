@@ -3,7 +3,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Database\Eloquent\Model;
+
+use App\Models\WorkflowBase;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 abstract class AuditBaseController extends Controller
 {
     /**
-     * @var Model
+     * @var WorkflowBase
      */
     protected $modelClass;
 
@@ -33,18 +34,21 @@ abstract class AuditBaseController extends Controller
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        $instance = $this->modelClass::query()->findOrFail($id);
+        $instance = $this->modelClass::query()->find($id);
 
-        if (!$instance->submitCallback(request()->except('id'))) {
+        if (!$instance->submitCallback()) {
             return response()->json([
                 'message' => $instance->getError(),
             ], Response::HTTP_BAD_REQUEST);
         }
+
+        return \response()->json([
+            'message' => '操作成功！',
+        ]);
     }
 
     /**
      * 审核列表
-     * 优先级：用户》动态指定》部门》角色，四者取一
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -63,12 +67,10 @@ abstract class AuditBaseController extends Controller
 
         // TODO：部门节点
         $userNodes = $user->nodes()->get(['node_id']);
-        // TODO：当前用户是否在动态指定之列
 
-        $auditNodes = [];
-
-        $roleNodes && $auditNodes = $roleNodes->toArray();
-        $userNodes && $auditNodes = array_column($userNodes->toArray(), 'node_id');
+        $roleNodes = array_column($roleNodes->toArray(), 'node_id');
+        $userNodes = array_column($userNodes->toArray(), 'node_id');
+        $auditNodes = array_unique(array_merge($roleNodes, $userNodes));
 
         if (empty($auditNodes)) {
             return response()->json([

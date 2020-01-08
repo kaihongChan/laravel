@@ -150,9 +150,9 @@ class WorkflowController extends Controller
     {
         $id = \request()->get('id');
 
-        $workflow = Workflow::query()->findOrFail($id)->toArray();
+        $workflow = Workflow::query()->findOrFail($id);
 
-        $modelName = trim($workflow['model']);
+        $modelName = trim($workflow->getAttribute('model'));
 
         $nameSpace = 'App\\Models\\' . $modelName;
         $columns = constant($nameSpace . '::DYNAMIC_COLUMNS');

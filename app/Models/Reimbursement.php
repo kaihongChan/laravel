@@ -4,9 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
-use mysql_xdevapi\Exception;
 
 class Reimbursement extends WorkflowBase
 {
@@ -28,7 +26,7 @@ class Reimbursement extends WorkflowBase
      */
     const DYNAMIC_COLUMNS = [
         [
-            'column' => '',
+            'related' => 'creator.departments.managers',
             'name' => '部门主管',
         ]
     ];
@@ -97,6 +95,16 @@ class Reimbursement extends WorkflowBase
     public function getTableColumns()
     {
         return $this->getConnection()->getSchemaBuilder()->getColumnListing($this->getTable());
+    }
+
+    /**
+     * 申请人
+     *
+     * @return BelongsTo
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

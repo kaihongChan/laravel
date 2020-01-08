@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-abstract class WorkflowBase extends Base implements AuditModelInterface
+abstract class WorkflowBase extends Base
 {
     /**
      * 审核操作
@@ -177,12 +177,11 @@ abstract class WorkflowBase extends Base implements AuditModelInterface
     }
 
     /**
-     * 审核通过回调
+     * 提交审核回调
      *
-     * @param array $requestData
      * @return bool|mixed
      */
-    public function submitCallback($requestData = [])
+    public function submitCallback()
     {
         $startNode = $this->startNode();
         $nextNode = $this->nextNode($startNode);

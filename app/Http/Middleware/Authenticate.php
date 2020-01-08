@@ -18,6 +18,6 @@ class Authenticate extends Middleware
             return route('login');
         }
 
-        return response()->json(['message' => '用户认证失败！'], 401);
+        return null;
     }
 }
