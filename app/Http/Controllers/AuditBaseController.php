@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 
 
 use App\Models\WorkflowBase;
+use App\Models\WorkflowNode;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 
 /**
  * 审核基类
@@ -54,32 +55,31 @@ abstract class AuditBaseController extends Controller
      */
     public function AuditIndex()
     {
-        $searParams = request()->all();
-        $pageIndex = isset($searParams['pi']) ? intval($searParams['pi']) : 1;
-        $pageSize = isset($searParams['ps']) ? intval($searParams['ps']) : 10;
+        $searchParams = request()->all();
+        $pageIndex = isset($searParams['pi']) ? intval($searchParams['pi']) : 1;
+        $pageSize = isset($searParams['ps']) ? intval($searchParams['ps']) : 10;
 
-        $user = auth()->user();
-        $roleNodes = DB::table('user_roles')
-            ->join('workflow_node_roles', 'user_roles.role_id', '=',
-                'workflow_node_roles.role_id', 'right')
-            ->where('user_roles.user_id', $user->getAuthIdentifier())
-            ->distinct()->get('node_id');
+        $workflowId = $this->modelClass->workflow()->getAttribute('id');
+        $userInstance = \auth()->user();
+        // 当前登录用户节点
+        $userNodeIds = $userInstance->nodes()->where([
+            'workflow_id' => $workflowId,
+            'type' => 0
+        ])->allRelatedIds()->all();
 
-        // TODO：部门节点
-        $userNodes = $user->nodes()->get(['node_id']);
+        // 当前登录用户角色节点
+        $userRoleIds = $userInstance->roles()->allRelatedIds()->all();
+        $roleNodeIds = WorkflowNode::query()->whereHas('roles',
+            function (Builder $query) use ($userRoleIds, $workflowId) {
+                return $query->where('workflow_id', $workflowId)->whereIn('role_id', $userRoleIds);
+            })->where('type', 0)->pluck('id')->all();
 
-        $roleNodes = array_column($roleNodes->toArray(), 'node_id');
-        $userNodes = array_column($userNodes->toArray(), 'node_id');
-        $auditNodes = array_unique(array_merge($roleNodes, $userNodes));
+        $auditNodes = array_unique(array_merge($userNodeIds, $roleNodeIds));
 
-        if (empty($auditNodes)) {
-            return response()->json([
-                'message' => '资源列表获取成功！',
-                'data' => []
-            ]);
-        }
-
-        $list = $this->modelClass::query()->whereIn('current_node', $auditNodes)
+        $list = $this->modelClass::query()
+            ->where([
+                'status' => 1,
+            ])->whereIn('current_node', $auditNodes)
             ->paginate($pageSize, '*', 'pi', $pageIndex);
 
         return response()->json([

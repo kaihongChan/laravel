@@ -147,6 +147,7 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+        // TODO:超级管理员禁止删除
         if (!$this->user::destroy($id)) {
             return response()->json([
                 'message' => '资源删除失败'

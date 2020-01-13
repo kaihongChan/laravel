@@ -15,9 +15,6 @@ class Reimbursement extends WorkflowBase
         [
             'column' => 'amount',
             'name' => '金额',
-        ], [
-            'column' => 'created_by',
-            'name' => '创建人',
         ],
     ];
 

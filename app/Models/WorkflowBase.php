@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Interfaces\AuditModelInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
@@ -51,6 +52,16 @@ abstract class WorkflowBase extends Base
     {
         $class = last(explode('\\', static::class));
         return $this->hasMany(WorkflowLog::class, 'record_id')->where('model', $class);
+    }
+
+    /**
+     * 审核申请-当前节点
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function currentNode()
+    {
+        return $this->belongsTo(WorkflowNode::class, 'current_node');
     }
 
     /**

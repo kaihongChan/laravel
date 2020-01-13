@@ -68,6 +68,17 @@ class WorkflowNode extends Model
     }
 
     /**
+     * 节点-角色
+     *
+     * @return BelongsToMany
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'workflow_node_roles',
+            'node_id', 'role_id')->withTimestamps();
+    }
+
+    /**
      * 判断节点类型
      *
      * @return bool

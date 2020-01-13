@@ -28,7 +28,7 @@ class CreateWorkflow extends Migration
             $table->unsignedBigInteger('workflow_id')->comment('审核流id');
             $table->string('name')->comment('名称');
             $table->tinyInteger('type')->comment('节点类型：0常规节点，1开始节点，2结束节点');
-            $table->tinyInteger('mode')->comment('审核方式：0无，1普签，2会签');
+            $table->tinyInteger('mode')->default(0)->comment('审核方式：0普签，1会签');
             $table->integer('position_x')->default(0)->comment('节点x坐标');
             $table->integer('position_y')->default(0)->comment('节点y坐标');
             $table->timestamps();
